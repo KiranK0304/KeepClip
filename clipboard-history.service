@@ -1,0 +1,14 @@
+[Unit]
+Description=Unified Clipboard History Service for Wayland
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/kiran/.local/share/clipboard-history/service.py
+Restart=always
+RestartSec=1
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

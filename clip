@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+
+sys.path.insert(0, os.path.expanduser("~/.local/share/clipboard-history"))
+import store
+
+def format_preview(text, max_len=65):
+    lines = text.splitlines()
+    first_line = lines[0] if lines else ""
+    first_line = " ".join(first_line.split())
+    if len(first_line) > max_len:
+        first_line = first_line[:max_len - 3] + "..."
+    if len(lines) > 1:
+        first_line += f"  \033[38;5;244m(+{len(lines)-1} lines)\033[0m"
+    return first_line
+
+def copy_to_clipboard(text):
+    try:
+        p = subprocess.Popen(["wl-copy"], stdin=subprocess.PIPE)
+        p.communicate(input=text.encode("utf-8"))
+        print("\033[1;32m✔\033[0m Copied item to clipboard!")
+    except Exception as e:
+        print(f"\033[1;31mError copying:\033[0m {e}")
+
+def main():
+    args = sys.argv[1:]
+    
+    if args and args[0] in ("clear", "clean", "--clear"):
+        store.clear_history()
+        print("\033[1;33m✔\033[0m Clipboard history cleared.")
+        return
+
+    if args and args[0] in ("gui", "popup", "open"):
+        subprocess.Popen(["/home/kiran/.local/bin/clip-popup"])
+        return
+
+    # Check if user typed a number: clip 1, clip 2, etc.
+    if args and args[0].isdigit():
+        idx = int(args[0]) - 1
+        items = store.get_all_entries()
+        if 0 <= idx < len(items):
+            copy_to_clipboard(items[idx]["text"])
+            return
+        else:
+            print(f"\033[1;31mInvalid index:\033[0m Only {len(items)} items available.")
+            return
+
+    # Search filter
+    query = " ".join(args) if args else ""
+    items = store.get_all_entries(query)
+
+    print("\033[1;34m╭──────────────────────────────────────────────────────────────╮\033[0m")
+    print("\033[1;34m│\033[0m                  \033[1;37mRecent Clipboard History\033[0m                    \033[1;34m│\033[0m")
+    print("\033[1;34m╰──────────────────────────────────────────────────────────────╯\033[0m\n")
+
+    if not items:
+        print("  \033[38;5;244m(No clipboard history found)\033[0m\n")
+        return
+
+    print("  \033[1;33mRecent Items:\033[0m  \033[38;5;244m(Press Win + V anytime for the graphical popup)\033[0m\n")
+    for i, it in enumerate(items[:15], 1):
+        pin_badge = "\033[1;33m📌 \033[0m" if it.get("pinned") else "   "
+        num = f"\033[1;35m[{i:2d}]\033[0m"
+        preview = format_preview(it["text"])
+        print(f"  {num} {pin_badge}\033[1;37m{preview}\033[0m")
+
+    print("\n  \033[1;33mCommands:\033[0m")
+    print("    \033[1;32mclip <number>\033[0m        Copy that snippet back to clipboard")
+    print("    \033[1;32mclip <query>\033[0m         Search through clipboard items")
+    print("    \033[1;32mclip clear\033[0m           Clear history")
+    print("    \033[1;32mWin + V\033[0m              Open floating GUI popup anywhere\n")
+
+if __name__ == "__main__":
+    main()
