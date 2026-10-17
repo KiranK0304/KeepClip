@@ -24,6 +24,18 @@ def copy_to_clipboard(text):
     except Exception as e:
         print(f"\033[1;31mError copying:\033[0m {e}")
 
+def sync_active_clipboard():
+    try:
+        res = subprocess.run(["wl-paste", "-n"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=0.4)
+        if res.returncode == 0:
+            raw = res.stdout
+            if b"\x00" not in raw:
+                text = raw.decode("utf-8", errors="ignore").strip()
+                if text:
+                    store.add_entry(text)
+    except Exception:
+        pass
+
 def main():
     args = sys.argv[1:]
     
@@ -31,6 +43,9 @@ def main():
         store.clear_history()
         print("\033[1;33m✔\033[0m Clipboard history cleared.")
         return
+
+    # Sync current clipboard on run
+    sync_active_clipboard()
 
     if args and args[0] in ("gui", "popup", "open"):
         subprocess.Popen(["/home/kiran/.local/bin/clip-popup"])

@@ -46,7 +46,7 @@ mkdir -p "$TARGET_DATA" "$TARGET_BIN" "$SYSTEMD_USER_DIR"
 
 # 4. Copy backend files
 echo -e "\033[1;32m==>\033[0m Installing application files to $TARGET_DATA..."
-cp "$SCRIPT_DIR/service.py" "$TARGET_DATA/"
+cp "$SCRIPT_DIR/ui.py" "$TARGET_DATA/"
 cp "$SCRIPT_DIR/store.py" "$TARGET_DATA/"
 cp "$SCRIPT_DIR/uinput_paste.py" "$TARGET_DATA/"
 
@@ -61,11 +61,11 @@ if [[ ":$PATH:" != *":$TARGET_BIN:"* ]]; then
     export PATH="$TARGET_BIN:$PATH"
 fi
 
-# 7. Setup & Start Systemd Service
-echo -e "\033[1;32m==>\033[0m Starting KeepClip background service..."
-cp "$SCRIPT_DIR/clipboard-history.service" "$SYSTEMD_USER_DIR/"
-systemctl --user daemon-reload
-systemctl --user enable --now clipboard-history.service
+# Clean up any legacy polling service
+if systemctl --user is-active --quiet clipboard-history.service 2>/dev/null; then
+    systemctl --user stop clipboard-history.service 2>/dev/null || true
+    systemctl --user disable clipboard-history.service 2>/dev/null || true
+fi
 
 # 8. Configure GNOME Win + V (Super + V) keybinding
 echo -e "\033[1;32m==>\033[0m Binding Win + V (Super + V) shortcut in GNOME..."

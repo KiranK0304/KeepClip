@@ -1,11 +1,2 @@
 #!/usr/bin/env bash
-SOCK="$HOME/.local/share/clipboard-history/popup.sock"
-
-if [ -S "$SOCK" ]; then
-    printf 'SHOW\n' | nc -U "$SOCK" 2>/dev/null && exit 0
-fi
-
-# Fallback: if service wasn't running, start it
-systemctl --user start clipboard-history.service
-sleep 0.1
-printf 'SHOW\n' | nc -U "$SOCK" 2>/dev/null || /usr/bin/python3 "$HOME/.local/share/clipboard-history/ui.py"
+exec /usr/bin/python3 "$HOME/.local/share/clipboard-history/ui.py"
